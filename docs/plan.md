@@ -1,0 +1,278 @@
+# Plano de Implementação — Mini Gestão de Pedidos
+
+- **Referência:** [docs/spec.md](spec.md) (v1.1)
+- **Status:** Plano inicial gerado com apoio da IA (Cursor), sujeito a revisão do desenvolvedor
+- **Abordagem:** AI First, com entrega incremental (um commit por etapa concluída)
+
+---
+
+## 1. Visão geral e premissas
+
+### Objetivo
+
+Entregar uma aplicação web para cadastro e consulta de pedidos e relatório dos cinco clientes com maior volume de compras, executável integralmente com `docker compose up`.
+
+### Stack
+
+- **Backend:** .NET 8 Web API, C#, Entity Framework Core, SQL Server, xUnit
+- **Frontend:** React, TypeScript, Vite, Axios
+- **Infraestrutura:** SQL Server em container, Docker Compose, Testcontainers, Git e GitHub
+- **IA:** Cursor Pro, Cursor Agent
+
+### Premissas
+
+- Os scripts SQL em `database/` são a fonte de verdade do esquema. O EF Core é mapeado para refletir esses scripts (sem migrations como fonte principal).
+- O backend é a única autoridade sobre preço, total e estoque. O frontend apenas exibe valores informativos.
+- Funcionalidades fora da spec (por exemplo, endpoints de apoio, cancelamento de pedidos) só serão implementadas com aprovação prévia.
+- Cada fase termina com build e testes da fase passando, e com um commit pequeno e descritivo.
+- Nenhuma credencial real é versionada. Valores sensíveis vêm de variáveis de ambiente (`.env.example` no repositório).
+
+---
+
+## 2. Mapa de dependências entre fases
+
+```mermaid
+flowchart LR
+    f0[Fase0_Fundacao] --> f1[Fase1_Banco]
+    f1 --> f2[Fase2_Backend]
+    f2 --> f3[Fase3_Frontend]
+    f2 --> f4[Fase4_Testes]
+    f3 --> f4
+    f2 --> f5[Fase5_Docker]
+    f3 --> f5
+    f4 --> f6[Fase6_Query_Docs]
+    f5 --> f6
+    f0 --> f7[Fase7_Cursor_Config]
+```
+
+| Fase | Depende de | Pode ocorrer em paralelo com |
+| ---- | ---------- | ---------------------------- |
+| 0 - Fundação do repositório | Nenhuma | Fase 7 |
+| 1 - Modelagem de dados | 0 | Fase 7 |
+| 2 - Backend | 1 | Fase 7 |
+| 3 - Frontend | 2 (contrato da API estável) | Fase 4 (parcialmente) |
+| 4 - Testes | 2 (unitários e integração), 3 (E2E) | Fase 3 |
+| 5 - Docker | 2 e 3 | Fase 4 |
+| 6 - Otimização da query e documentação | 4 e 5 | Nenhuma |
+| 7 - Configuração AI First no Cursor | 0 | Fases 1 a 5 |
+
+---
+
+## 3. Fases detalhadas
+
+### Fase 0 - Fundação do repositório
+
+**Objetivo:** preparar a estrutura base conforme a seção 10 da spec.
+
+**Responsabilidades**
+
+- Criar a estrutura de pastas: `docs/`, `.cursor/`, `database/`, `backend/`, `frontend/`.
+- Criar `.gitignore` (.NET, Node, IDE, `.env`), `README.md` inicial e `.env.example`.
+- Criar a solution .NET em `backend/` com os projetos `API`, `Application`, `Domain` e `Infrastructure` em `src/`, e `UnitTests` e `IntegrationTests` em `tests/`, com as referências entre projetos (API -> Application -> Domain; Infrastructure -> Application/Domain).
+- Inicializar o repositório Git e o primeiro commit.
+
+**Entregáveis:** repositório compilando (`dotnet build`) com projetos vazios.
+
+**Critério de conclusão:** estrutura criada, build verde, primeiro commit realizado.
+
+---
+
+### Fase 1 - Modelagem de dados (`database/`)
+
+**Objetivo:** definir o esquema SQL Server e os dados de exemplo.
+
+**Responsabilidades**
+
+- `01-create-tables.sql`:
+  - `Clientes` (Id, Nome NVARCHAR(150), Email NVARCHAR(150), DataCadastro DATETIME2).
+  - `Produtos` (Id, Nome NVARCHAR(150), Preco DECIMAL(18,2), Estoque INT).
+  - `Pedidos` (Id, ClienteId FK, DataPedido DATETIME2, ValorTotal DECIMAL(18,2)).
+  - `ItensPedido` (Id, PedidoId FK, ProdutoId FK, Quantidade INT, PrecoUnitario DECIMAL(18,2)).
+  - Constraints: `Preco > 0`, `Estoque >= 0`, `Quantidade > 0`, chaves primárias e estrangeiras.
+- `02-create-indexes.sql`: índices em `Pedidos.ClienteId`, `Pedidos.DataPedido`, `ItensPedido.PedidoId` e `ItensPedido.ProdutoId`.
+- `03-seed-data.sql`: clientes, produtos e pedidos suficientes para exercitar filtros, paginação e o ranking (incluindo clientes com nomes iguais, clientes sem pedidos e pedidos fora do período).
+- Scripts idempotentes ou protegidos para execução apenas em banco novo.
+
+**Entregáveis:** três scripts SQL versionados e validados em uma instância SQL Server.
+
+**Critério de conclusão:** scripts executam em sequência sem erro; tabelas, FKs, constraints e índices conferidos.
+
+---
+
+### Fase 2 - Backend (.NET 8)
+
+**Objetivo:** implementar a API e as regras de negócio em camadas.
+
+**Responsabilidades por camada**
+
+- **Domain:** entidades `Cliente`, `Produto`, `Pedido`, `ItemPedido`, regras invariantes (preço > 0, estoque não negativo, quantidade > 0) e exceções de domínio.
+- **Infrastructure:** `DbContext` com mapeamentos alinhados aos scripts SQL, repositórios, gerenciamento de transação única (pedido, itens e baixa de estoque).
+- **Application:**
+  - DTOs de request e response conforme a seção 5 da spec.
+  - Validação de entrada (cliente informado, pelo menos um item, quantidade > 0).
+  - Serviço de criação de pedido: verifica cliente e produtos, valida estoque, aplica o preço vigente, calcula subtotais e total, baixa o estoque, tudo em uma transação com rollback em qualquer falha.
+  - Consulta paginada de pedidos com filtros e ordenação por data decrescente.
+  - Relatório top 5 clientes (agregação por `Cliente.Id`, período obrigatório).
+- **API:**
+  - `POST /pedidos`: 201, 400, 404, 409 e 500.
+  - `GET /pedidos`: filtros `clienteId`, `dataInicio`, `dataFim`, `page`, `pageSize`; resposta `{ items, page, pageSize, totalItems, totalPages }`.
+  - `GET /relatorios/top-clientes`: `dataInicio` e `dataFim` obrigatórios; resposta com `clienteId`, `nome` e `totalComprado`.
+  - Middleware global de tratamento de erros com mapeamento para os códigos HTTP, CORS para o frontend e configuração por variáveis de ambiente.
+  - Endpoints de apoio (listar clientes e produtos) necessários ao frontend: **fora da spec, dependem de aprovação do desenvolvedor.**
+
+**Entregáveis:** API funcional contra o banco criado na Fase 1, com Swagger para verificação manual.
+
+**Critério de conclusão:** os três endpoints respondem conforme a spec e as regras da seção 3 são respeitadas.
+
+---
+
+### Fase 3 - Frontend (React + TypeScript + Vite)
+
+**Objetivo:** interface para listar e criar pedidos.
+
+**Responsabilidades**
+
+- Projeto Vite com React e TypeScript em `frontend/`.
+- Camada de acesso à API com Axios (URL base por variável de ambiente) e tipos TypeScript dos contratos.
+- **Tela de listagem:** tabela (id, cliente, data, valor total), filtro por cliente, filtro por período, paginação e botão de novo pedido.
+- **Modal de criação:** seleção de cliente, seleção de produtos, quantidades, subtotais e total apenas informativos, confirmação e exibição de mensagens de sucesso e erro retornadas pela API (400, 404, 409).
+- Atualização da listagem após criação bem-sucedida.
+- O frontend não determina preço definitivo nem valida estoque final.
+
+**Entregáveis:** aplicação rodando em desenvolvimento integrada à API.
+
+**Critério de conclusão:** é possível criar um pedido e vê-lo na listagem, com filtros e paginação funcionando.
+
+---
+
+### Fase 4 - Testes
+
+**Objetivo:** cobrir as regras de negócio e os fluxos principais.
+
+**Responsabilidades**
+
+- **Unitários (xUnit):**
+  - Criação de pedido com dados válidos.
+  - Cliente inexistente e produto inexistente.
+  - Estoque insuficiente, pedido sem itens e quantidade inválida.
+  - Cálculo correto do valor total.
+  - Atualização correta do estoque.
+  - Falha transacional (nenhuma alteração parcial persistida).
+- **Integração (xUnit + Testcontainers + SQL Server real):**
+  - `POST /pedidos` com sucesso, cliente inexistente e estoque insuficiente.
+  - `GET /pedidos` com filtros e paginação.
+  - `GET /relatorios/top-clientes` com dados persistidos.
+- **E2E (Playwright, diferencial):** acessar a aplicação, criar um pedido e verificar o pedido na listagem.
+
+**Entregáveis:** projetos de teste executáveis com `dotnet test` e, para E2E, script do Playwright documentado.
+
+**Critério de conclusão:** testes unitários e de integração passando; E2E passando contra o ambiente via Docker Compose.
+
+---
+
+### Fase 5 - Docker
+
+**Objetivo:** execução integral com `docker compose up`.
+
+**Responsabilidades**
+
+- `Dockerfile` da API (build multi-stage) e do frontend (build Vite servido por servidor HTTP).
+- `docker-compose.yml` na raiz com:
+  - `sqlserver`: imagem oficial, healthcheck, volume, scripts de `database/` executados automaticamente na inicialização de um banco novo.
+  - `api`: `depends_on` com condição `service_healthy`, connection string por variável de ambiente.
+  - `frontend`: porta HTTP exposta, URL da API configurável.
+- `.env.example` com todas as variáveis necessárias, sem segredos reais.
+
+**Entregáveis:** ambiente completo subindo com um único comando.
+
+**Critério de conclusão:** em máquina limpa, `docker compose up` entrega banco populado, API e frontend acessíveis.
+
+---
+
+### Fase 6 - Otimização da query e documentação
+
+**Objetivo:** validar a query do ranking e fechar a documentação.
+
+**Responsabilidades**
+
+- Executar e comparar a query original e a otimizada (seção 7 da spec) no SQL Server:
+  - Plano de execução estimado e real.
+  - Índices existentes.
+  - Quantidade de registros envolvidos.
+  - Leituras lógicas (`SET STATISTICS IO`) e custo das operações.
+- Registrar no README os problemas identificados e o resultado da comparação.
+- Completar o README com: como executar, como rodar os testes, decisões técnicas, uso do Cursor (tarefas realizadas, resultados, correções necessárias, reflexões), limitações conhecidas.
+- Atualizar este `plan.md` com ajustes e decisões da execução.
+- Preparar o vídeo de demonstração (até 10 minutos).
+
+**Entregáveis:** README completo e `plan.md` atualizado.
+
+**Critério de conclusão:** todos os itens do README exigidos pelos critérios de aceite estão presentes.
+
+---
+
+### Fase 7 - Configuração AI First no Cursor
+
+**Objetivo:** configurar o Cursor para guiar o desenvolvimento (pode começar logo após a Fase 0 e evoluir durante o projeto).
+
+**Responsabilidades**
+
+- **Rules** em `.cursor/rules/`: `project-standards.mdc`, `backend-standards.mdc` e `frontend-standards.mdc`, cobrindo arquitetura, nomenclatura, padrões de backend e frontend, convenções de testes, comandos de build/teste/execução e a regra de não implementar funcionalidades fora do escopo sem aprovação.
+- **Hook** (`.cursor/hooks.json` e `.cursor/hooks/validate-build.sh`): validação de build ou formatação após alterações relevantes, impedindo considerar a alteração concluída se a validação falhar. Documentado no README.
+- **Skill** `create-endpoint` (`.cursor/skills/create-endpoint/SKILL.md`): DTOs, validação de entrada, lógica de negócio, tratamento de erros, persistência e testes unitários e de integração.
+- **MCP** (`.cursor/mcp.json`): conexão ao SQL Server para consultar estrutura, relacionamentos, dados de exemplo e apoiar a otimização de queries; sem credenciais reais, preferencialmente com usuário somente leitura. Documentar configuração, uso, limitações e cuidados no README.
+
+**Entregáveis:** configuração versionada e documentada.
+
+**Critério de conclusão:** Rules, Hook, Skill e MCP funcionando e descritos no README.
+
+---
+
+## 4. Ajustes do desenvolvedor e decisões alteradas ou rejeitadas
+
+Seção a ser preenchida durante a execução, com o formato abaixo.
+
+### Ajustes realizados pelo desenvolvedor
+
+- _(nenhum registrado até o momento)_
+
+### Decisões alteradas ou rejeitadas
+
+| Decisão original (IA) | Alternativa adotada | Justificativa técnica |
+| --------------------- | ------------------- | --------------------- |
+| _(a preencher)_ | _(a preencher)_ | _(a preencher)_ |
+
+---
+
+## 5. Riscos e pontos de atenção
+
+- **Concorrência na baixa de estoque:** dois pedidos simultâneos podem esgotar o mesmo estoque. Mitigar com transação e atualização condicional (`UPDATE ... WHERE Estoque >= quantidade`) ou controle de concorrência.
+- **Filtro por período:** usar limite superior exclusivo (`DataPedido < dataFim + 1 dia`) para incluir todo o último dia, e evitar funções como `YEAR()` sobre a coluna filtrada.
+- **Ordem de inicialização:** a API só deve subir após o SQL Server estar saudável e os scripts executados. Usar healthcheck e `depends_on` com `service_healthy`.
+- **Scripts em banco novo:** a imagem do SQL Server não executa scripts automaticamente. Prever um container ou entrypoint de inicialização.
+- **Testcontainers:** exige Docker disponível na máquina que roda os testes de integração.
+- **Escopo:** endpoints de apoio ao frontend (clientes e produtos) não constam na spec e exigem aprovação.
+- **Código gerado por IA:** nada é considerado correto sem revisão, execução dos testes e validação manual.
+
+---
+
+## 6. Rastreabilidade com os critérios de aceite
+
+| Critério de aceite (spec, seção 12) | Fase |
+| ----------------------------------- | ---- |
+| O banco SQL Server possui as quatro tabelas requeridas | 1 |
+| Chaves primárias, estrangeiras e índices configurados | 1 |
+| Scripts de criação e carga de dados versionados | 1 |
+| API permite criar pedidos com validação de cliente e estoque | 2 |
+| API permite listar pedidos com filtros e paginação | 2 |
+| API permite consultar o ranking dos cinco maiores clientes | 2 |
+| Frontend permite criar e consultar pedidos | 3 |
+| Testes unitários cobrem as regras de negócio | 4 |
+| Testes de integração executam contra SQL Server real | 4 |
+| Query otimizada documentada no README | 6 |
+| Projeto sobe com Docker Compose | 5 |
+| README documenta execução, testes e decisões técnicas | 6 |
+| Cursor configurado com Rules, Hooks, Skills e MCP | 7 |
+| Plano de implementação elaborado com o Cursor e documentado | Este documento (atualizado na Fase 6) |
+| Histórico de commits demonstra evolução incremental | Todas (um commit por etapa) |
+| Vídeo de demonstração com até 10 minutos | 6 |
