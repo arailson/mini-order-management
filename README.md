@@ -4,7 +4,7 @@ Aplicação web para gerenciamento de pedidos de clientes: cadastro de pedidos, 
 
 Projeto desenvolvido com abordagem **AI First** usando o Cursor. Veja a especificação em [docs/spec.md](docs/spec.md) e o plano de implementação em [docs/plan.md](docs/plan.md).
 
-> Status: **Fases 0 (estrutura), 1 (banco de dados), 2 (backend) e 7 (configuração AI First no Cursor) concluídas**. As demais fases (3 frontend, 4 testes, 5 Docker e 6 documentação final) estão descritas no plano.
+> Status: **Fases 0 (estrutura), 1 (banco de dados), 2 (backend), 3 (frontend) e 7 (configuração AI First no Cursor) concluídas**. As demais fases (4 testes, 5 Docker e 6 documentação final) estão descritas no plano.
 
 ## Stack
 
@@ -35,7 +35,9 @@ Projeto desenvolvido com abordagem **AI First** usando o Cursor. Veja a especifi
 │   └── tests/
 │       ├── UnitTests/
 │       └── IntegrationTests/
-├── frontend/             # React + TypeScript + Vite
+├── frontend/             # React + TypeScript + Vite (Fase 3)
+│   ├── src/api|types|hooks|components|pages
+│   └── .env.example          # VITE_API_URL
 ├── .env.example
 ├── .env.mcp.example
 └── README.md
@@ -121,11 +123,22 @@ Detalhes de comportamento:
 
 ### Frontend
 
+A UI cobre listagem de pedidos (filtros por cliente e período, paginação) e criação via modal. Subtotais e total no formulário são apenas informativos; preço e estoque ficam a cargo da API.
+
 ```bash
+# Em frontend/, copie o exemplo e ajuste se a API não estiver em :5000
+copy .env.example .env   # Windows
+# cp .env.example .env   # Linux/macOS
+
 cd frontend
 npm install
 npm run dev
 ```
+
+- App: <http://localhost:5173> (porta padrão do Vite)
+- Variável: `VITE_API_URL` (padrão `http://localhost:5000`) — o Vite só lê `.env` dentro de `frontend/`
+- Qualidade: `npm run lint --prefix frontend` e `npm run build --prefix frontend`
+- A API precisa estar rodando (veja a seção Backend) e o CORS já libera `http://localhost:5173`
 
 ### Docker Compose
 

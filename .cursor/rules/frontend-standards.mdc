@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Frontend (React 19 + TypeScript + Vite)
 
-Stack real: React 19, TypeScript (`tsc -b`), Vite 8, `oxlint`. Axios será adicionado na Fase 3 (`npm install axios --prefix frontend`).
+Stack real: React 19, TypeScript (`tsc -b`, `strict`), Vite 8, Axios, `oxlint`.
 
 ## Organização (`frontend/src/`)
 

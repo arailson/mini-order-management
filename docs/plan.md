@@ -141,7 +141,15 @@ flowchart LR
 
 **Entregáveis:** aplicação rodando em desenvolvimento integrada à API.
 
-**Critério de conclusão:** é possível criar um pedido e vê-lo na listagem, com filtros e paginação funcionando.
+**Critério de conclusão:**
+
+- [x] Axios e tipos TypeScript alinhados aos DTOs da API (`VITE_API_URL`).
+- [x] Listagem com tabela (id, cliente, data, valor total), filtros por cliente e período e paginação.
+- [x] Modal de criação com subtotais/total apenas informativos e tratamento de erros 400/404/409.
+- [x] Listagem atualizada após criação bem-sucedida; frontend não decide preço nem estoque.
+- [x] `npm run lint` e `npm run build` no `frontend/` sem erros.
+
+**Status:** concluída.
 
 ---
 
