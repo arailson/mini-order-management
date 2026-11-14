@@ -39,7 +39,8 @@ alwaysApply: false
 
 ## Testes
 
-- `tests/UnitTests` (xUnit): Domain e Application com fakes/dublês dos repositórios; sem banco. Cobrir cada regra da seção 3 da spec (sucesso, cliente/produto inexistente, estoque insuficiente, sem itens, quantidade inválida, total, estoque atualizado, falha transacional).
-- `tests/IntegrationTests` (xUnit): `WebApplicationFactory<Program>` + Testcontainers com SQL Server real, scripts de `database/` aplicados no setup. Cobrir POST /pedidos (sucesso, 404, 409), GET /pedidos e top-clientes.
+- `tests/UnitTests` (xUnit + NSubstitute + FluentAssertions 6.x): Domain e Application com fakes/dublês; sem banco. Cobrir criação válida, cliente/produto inexistente, estoque insuficiente, sem itens, quantidade inválida, total, estoque atualizado e falha transacional.
+- `tests/IntegrationTests` (xUnit + `WebApplicationFactory` + SQL Server real em Docker, scripts `database/` no setup): POST /pedidos (201/404/409/400), GET /pedidos (filtros/paginação) e top-clientes. Trait `Category=Integration`. TFM `net11.0` neste ambiente (TestHost); a API segue `net8.0`.
+- E2E em `e2e/` (Playwright): criar pedido na UI e validar na listagem (`npm test --prefix e2e`).
 - Nome dos testes: `Metodo_Cenario_ResultadoEsperado`. Padrão Arrange/Act/Assert.
-- Antes de concluir: `dotnet build backend/MiniGestaoPedidos.sln` e `dotnet test` sem erros.
+- Antes de concluir: `dotnet build backend/MiniGestaoPedidos.sln` e `dotnet test` (Docker ligado para integração) sem erros.

@@ -174,7 +174,14 @@ flowchart LR
 
 **Entregáveis:** projetos de teste executáveis com `dotnet test` e, para E2E, script do Playwright documentado.
 
-**Critério de conclusão:** testes unitários e de integração passando; E2E passando contra o ambiente via Docker Compose.
+**Critério de conclusão:**
+
+- [x] Testes unitários (Domain/Application) cobrindo criação válida, 404s, estoque, validação, total, estoque debitado e falha transacional.
+- [x] Testes de integração com SQL Server real em Docker (`WebApplicationFactory` + scripts `database/`), cobrindo POST /pedidos (201/404/409/400), GET /pedidos e top-clientes.
+- [x] E2E Playwright (`e2e/`) criando pedido e validando a listagem.
+- [x] `dotnet test` e `npm test --prefix e2e` documentados no README.
+
+**Status:** concluída.
 
 ---
 

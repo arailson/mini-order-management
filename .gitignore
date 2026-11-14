@@ -52,11 +52,14 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# ---------- Playwright ----------
+# ---------- Playwright / e2e ----------
 playwright-report/
 test-results/
 blob-report/
 playwright/.cache/
+e2e/test-results/
+e2e/playwright-report/
+e2e/blob-report/
 
 # ---------- Docker ----------
 docker-compose.override.yml

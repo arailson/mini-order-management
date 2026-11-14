@@ -4,7 +4,7 @@ Aplicação web para gerenciamento de pedidos de clientes: cadastro de pedidos, 
 
 Projeto desenvolvido com abordagem **AI First** usando o Cursor. Veja a especificação em [docs/spec.md](docs/spec.md) e o plano de implementação em [docs/plan.md](docs/plan.md).
 
-> Status: **Fases 0 (estrutura), 1 (banco de dados), 2 (backend), 3 (frontend) e 7 (configuração AI First no Cursor) concluídas**. As demais fases (4 testes, 5 Docker e 6 documentação final) estão descritas no plano.
+> Status: **Fases 0 (estrutura), 1 (banco de dados), 2 (backend), 3 (frontend), 4 (testes) e 7 (configuração AI First no Cursor) concluídas**. As demais fases (5 Docker e 6 documentação final) estão descritas no plano.
 
 ## Stack
 
@@ -33,11 +33,12 @@ Projeto desenvolvido com abordagem **AI First** usando o Cursor. Veja a especifi
 │   │   ├── Domain/           # entidades e regras de negócio
 │   │   └── Infrastructure/   # EF Core, repositórios
 │   └── tests/
-│       ├── UnitTests/
-│       └── IntegrationTests/
+│       ├── UnitTests/            # xUnit (Domain/Application)
+│       └── IntegrationTests/     # xUnit + SQL Server em Docker
 ├── frontend/             # React + TypeScript + Vite (Fase 3)
 │   ├── src/api|types|hooks|components|pages
 │   └── .env.example          # VITE_API_URL
+├── e2e/                  # Playwright (Fase 4)
 ├── .env.example
 ├── .env.mcp.example
 └── README.md
@@ -139,6 +140,44 @@ npm run dev
 - Variável: `VITE_API_URL` (padrão `http://localhost:5000`) — o Vite só lê `.env` dentro de `frontend/`
 - Qualidade: `npm run lint --prefix frontend` e `npm run build --prefix frontend`
 - A API precisa estar rodando (veja a seção Backend) e o CORS já libera `http://localhost:5173`
+
+### Testes
+
+#### Unitários e integração (.NET)
+
+```powershell
+# Só unitários (sem Docker)
+dotnet test backend/tests/UnitTests/UnitTests.csproj
+
+# Integração (exige Docker Desktop ligado; sobe SQL Server 2022 temporário)
+dotnet test backend/tests/IntegrationTests/IntegrationTests.csproj
+
+# Solution inteira
+dotnet test backend/MiniGestaoPedidos.sln
+
+# Pular integração
+dotnet test backend/MiniGestaoPedidos.sln --filter "Category!=Integration"
+```
+
+- Unitários: Domain + Application com NSubstitute/`FakeUnitOfWork` (sem banco).
+- Integração: `WebApplicationFactory` + SQL Server real em Docker; scripts `database/01-03` aplicados no setup; reset do seed antes de cada teste.
+- Observação Windows + ASP.NET 11: o projeto `IntegrationTests` usa TFM `net11.0` (TestHost alinhado ao runtime instalado). A API permanece `net8.0`. A fixture usa a CLI do Docker (o `Testcontainers.MsSql` está referenciado, mas o Docker.DotNet quebra no named pipe com .NET 11 neste ambiente).
+
+#### E2E (Playwright)
+
+Pré-requisito: SQL Server do Compose no ar com os scripts 01–03 aplicados.
+
+```powershell
+docker compose up -d
+# se o banco ainda não existir, rode os scripts 01, 02 e 03 (veja "Banco de dados")
+
+npm install --prefix e2e
+npm run install:browsers --prefix e2e
+npm test --prefix e2e
+# ou: npm run test:headed --prefix e2e
+```
+
+O Playwright sobe API (`dotnet run` com connection string do `.env`) e frontend (`npm run dev`) automaticamente, ou reaproveita se já estiverem rodando. O fluxo coberto: abrir a tela, criar pedido e validar na listagem filtrada.
 
 ### Docker Compose
 

@@ -92,12 +92,11 @@ public sealed class ExceptionHandlingMiddleware
 
         context.Response.Clear();
         context.Response.StatusCode = problem.Status ?? StatusCodes.Status500InternalServerError;
-        // Usa o tipo concreto para serializar também o "errors" do ValidationProblemDetails.
-        await context.Response.WriteAsJsonAsync(
-            problem,
-            problem.GetType(),
-            options: null,
-            contentType: "application/problem+json");
+        context.Response.ContentType = "application/problem+json";
+        // Serializa pelo tipo concreto (inclui "errors" do ValidationProblemDetails) e grava
+        // via WriteAsync para compatibilidade com TestHost ao usar DOTNET_ROLL_FORWARD=Major.
+        var json = System.Text.Json.JsonSerializer.Serialize(problem, problem.GetType());
+        await context.Response.WriteAsync(json);
     }
 
     private static ProblemDetails Create(int status, string title, string detail) =>

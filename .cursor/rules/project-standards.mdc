@@ -40,10 +40,13 @@ Fonte de verdade dos requisitos: `docs/spec.md`. Plano: `docs/plan.md`.
 ```powershell
 docker compose up -d                                   # SQL Server (variáveis do .env)
 dotnet build backend/MiniGestaoPedidos.sln             # build do backend
-dotnet test backend/MiniGestaoPedidos.sln              # testes do backend
+dotnet test backend/MiniGestaoPedidos.sln              # testes do backend (integração exige Docker)
+dotnet test backend/MiniGestaoPedidos.sln --filter "Category!=Integration"  # só unitários
 npm run build --prefix frontend                        # build do frontend (tsc -b && vite build)
 npm run lint --prefix frontend                         # oxlint
+npm test --prefix e2e                                  # E2E Playwright (Compose + scripts SQL)
 ```
+
 
 - Scripts SQL: `sqlcmd -C -b -f 65001 -S localhost -U sa -P <senha> -i database/<arquivo>.sql` (o `-f 65001` evita problemas com acentos).
 - API local: definir `ConnectionStrings__DefaultConnection` com host `localhost,1433` e rodar `dotnet run --project backend/src/API --launch-profile http` (o perfil define `DOTNET_ROLL_FORWARD=Major`). Swagger em `http://localhost:5000/swagger`.
