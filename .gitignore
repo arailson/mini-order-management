@@ -7,6 +7,7 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+!.env.mcp.example
 
 # ---------- IDEs ----------
 .vs/
@@ -62,3 +63,4 @@ docker-compose.override.yml
 
 # ---------- Cursor (arquivos locais) ----------
 .cursor/mcp.local.json
+.cursor/hooks/.last-build.log

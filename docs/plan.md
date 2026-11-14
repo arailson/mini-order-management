@@ -224,7 +224,15 @@ flowchart LR
 
 **Entregáveis:** configuração versionada e documentada.
 
-**Critério de conclusão:** Rules, Hook, Skill e MCP funcionando e descritos no README.
+**Critério de conclusão:**
+
+- [x] Rules (`project-standards.mdc`, `backend-standards.mdc`, `frontend-standards.mdc`) criadas em `.cursor/rules/`.
+- [x] Hook `stop` configurado em `.cursor/hooks.json` e `.cursor/hooks/validate-build.sh` validado (build do backend e do frontend, sucesso e falha), documentado no README.
+- [x] Skill `create-endpoint` criada em `.cursor/skills/create-endpoint/SKILL.md`.
+- [x] MCP SQL Server configurado em `.cursor/mcp.json` sem credenciais (`.env.mcp` ignorado pelo Git, `.env.mcp.example` versionado) e script opcional `database/optional/create-readonly-user.sql` validado.
+- [x] Seção "Configuração AI First no Cursor" no README, com limitações e cuidados do MCP.
+
+**Status:** concluída. Observação: o servidor MCP (`mssql-read-only-mcp@1.0.2`) depende de pacote de terceiros executado via `npx`; ative-o em Cursor Settings > MCP após criar o `.env.mcp`.
 
 ---
 

@@ -1,0 +1,42 @@
+---
+description: Padrões do frontend React + TypeScript + Vite (componentes, tipos, Axios, estados e formulários)
+globs: ["frontend/**"]
+alwaysApply: false
+---
+
+# Frontend (React 19 + TypeScript + Vite)
+
+Stack real: React 19, TypeScript (`tsc -b`), Vite 8, `oxlint`. Axios será adicionado na Fase 3 (`npm install axios --prefix frontend`).
+
+## Organização (`frontend/src/`)
+
+- `api/`: instância Axios única e funções por recurso (`pedidosApi`, `clientesApi`, `produtosApi`).
+- `types/`: tipos que espelham os DTOs da API (camelCase, `PagedResult<T>`, `ProblemDetails`).
+- `components/`: componentes reutilizáveis e pequenos. `pages/`: telas (listagem de pedidos). `hooks/`: lógica reutilizável (`usePedidos`).
+- Componentes funcionais com hooks; um componente por arquivo; props tipadas por `interface`.
+
+## TypeScript
+
+- Modo estrito; **sem `any`** (use `unknown` e estreitamento).
+- Não duplicar regra do backend em tipos: o frontend só reflete o contrato.
+
+## Consumo da API (Axios)
+
+- `baseURL` vem de `import.meta.env.VITE_API_URL` (padrão `http://localhost:5000`).
+- Tratar erros em um único ponto, lendo `ProblemDetails`: exibir `detail` para 400, 404 e 409 (estoque insuficiente) e mensagem genérica para 500/rede.
+- Datas de filtro como `yyyy-MM-dd`; `pageSize` entre 1 e 100.
+
+## Estados de UI
+
+- Toda tela com dados assíncronos tem estados explícitos: `loading`, `erro` (com ação de tentar de novo) e `vazio`.
+- Desabilitar botões durante envio para evitar duplo envio de pedido.
+
+## Formulários
+
+- Campos controlados. Validar entrada: cliente obrigatório, ao menos um item, quantidade inteira > 0, produto não repetido na tela.
+- Subtotais e total exibidos são apenas informativos. **Nunca** enviar preço e **não** validar estoque final: o backend decide e retorna 404/409.
+- Mostrar mensagem de sucesso ou erro retornada pela API após confirmar.
+
+## Qualidade
+
+- Antes de concluir: `npm run lint --prefix frontend` e `npm run build --prefix frontend` sem erros.

@@ -1,0 +1,45 @@
+---
+description: Padrões do backend .NET 8 (camadas, DTOs, erros, EF Core/SQL Server e testes)
+globs: ["backend/**"]
+alwaysApply: false
+---
+
+# Backend (.NET 8, camadas)
+
+## Dependências entre camadas
+
+`Application -> Domain` | `Infrastructure -> Application, Domain` | `API -> Application, Infrastructure`. O Domain não referencia ninguém.
+
+## Domain (`backend/src/Domain`)
+
+- Entidades com setters privados; invariantes garantidas no construtor/métodos (`Produto`: preço > 0, estoque >= 0; `ItemPedido`: quantidade > 0).
+- Exceções em `Domain/Exceptions`: `DomainException` (400), `NotFoundException` (404: `ClienteNaoEncontradoException`, `ProdutoNaoEncontradoException`), `EstoqueInsuficienteException` (409).
+- Sem dependência de EF, ASP.NET ou DTOs.
+
+## Application (`backend/src/Application`)
+
+- Casos de uso como serviços com interface (`IPedidoService`) em `Services/`; registrar em `DependencyInjection.cs`.
+- DTOs como `record` em `DTOs/`. Nunca exponha entidades na API.
+- Validação de entrada acumula erros em `Dictionary<string, string[]>` e lança `ValidationException` (400).
+- Contratos de repositório e `IUnitOfWork` em `Abstractions/`. Escritas com várias etapas usam `IUnitOfWork.ExecuteInTransactionAsync` (commit/rollback automático).
+- Datas via `TimeProvider`, nunca `DateTime.Now` direto.
+
+## Infrastructure (`backend/src/Infrastructure`)
+
+- EF Core SqlServer 8.x mapeado **exatamente** aos scripts em `database/` (tabelas, colunas, tipos, PK/FK/CHECK, índices). Sem migrations: mudou o esquema, mude o SQL e o mapeamento juntos.
+- Leituras com `AsNoTracking()`. Filtros de data sem funções na coluna: `>= inicio` e `< fim.AddDays(1)` (usa `IX_Pedidos_DataPedido`).
+- Débito de estoque: ler produtos com `UPDLOCK, ROWLOCK` ordenados por Id dentro da transação.
+- Agregações do ranking por `Cliente.Id` (nunca só por `Nome`), desc, `Take(5)`.
+
+## API (`backend/src/API`)
+
+- Controllers finos: só chamam o serviço. Usar `[ApiController]`, `[ProducesResponseType]` e comentários `///` (Swagger).
+- Erros: `ExceptionHandlingMiddleware` converte exceções em `ProblemDetails` (`application/problem+json`): validação/domínio 400, não encontrado 404, estoque 409, demais 500 sem vazar detalhes.
+- Configuração por variáveis de ambiente (`ConnectionStrings__DefaultConnection`, `Cors__AllowedOrigins__0`). Nunca versionar senhas.
+
+## Testes
+
+- `tests/UnitTests` (xUnit): Domain e Application com fakes/dublês dos repositórios; sem banco. Cobrir cada regra da seção 3 da spec (sucesso, cliente/produto inexistente, estoque insuficiente, sem itens, quantidade inválida, total, estoque atualizado, falha transacional).
+- `tests/IntegrationTests` (xUnit): `WebApplicationFactory<Program>` + Testcontainers com SQL Server real, scripts de `database/` aplicados no setup. Cobrir POST /pedidos (sucesso, 404, 409), GET /pedidos e top-clientes.
+- Nome dos testes: `Metodo_Cenario_ResultadoEsperado`. Padrão Arrange/Act/Assert.
+- Antes de concluir: `dotnet build backend/MiniGestaoPedidos.sln` e `dotnet test` sem erros.

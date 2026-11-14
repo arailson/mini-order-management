@@ -1,0 +1,50 @@
+---
+description: Padrões gerais do projeto Mini Gestão de Pedidos (arquitetura, nomenclatura, Git, comandos e escopo)
+alwaysApply: true
+---
+
+# Padrões do projeto
+
+Fonte de verdade dos requisitos: `docs/spec.md`. Plano: `docs/plan.md`.
+
+## Escopo (regra estrita)
+
+- **Não implemente nada fora do escopo de `docs/spec.md` sem aprovação explícita do desenvolvedor.**
+- Exceção já aprovada: `GET /clientes` e `GET /produtos` (apoio ao frontend).
+- Em dúvida sobre escopo, pergunte antes de codar. Nada gerado pela IA é válido sem build e testes passando.
+- O backend é a autoridade sobre preço, total e estoque. O frontend nunca decide esses valores.
+
+## Arquitetura e pastas
+
+- `backend/` (.NET 8, `MiniGestaoPedidos.sln`): `src/{Domain,Application,Infrastructure,API}` e `tests/{UnitTests,IntegrationTests}`.
+- `frontend/`: React + TypeScript + Vite.
+- `database/`: scripts `01-create-tables.sql`, `02-create-indexes.sql`, `03-seed-data.sql` (fonte de verdade do esquema, sem migrations). Scripts opcionais ficam em `database/optional/`.
+- `docker-compose.yml` (raiz): hoje só `sqlserver` (SQL Server 2022, healthcheck, volume). `api` e `frontend` entram na Fase 5.
+- `.cursor/`: rules, hooks, skills e MCP.
+
+## Nomenclatura
+
+- Domínio, tabelas, rotas e DTOs em português (`Pedido`, `ItemPedido`, `/pedidos`, `ValorTotal`).
+- C#: PascalCase para tipos e membros, `_camelCase` para campos privados, interfaces com `I`.
+- TypeScript: `camelCase` para variáveis, `PascalCase` para componentes e tipos.
+- Comentários e documentação em português do Brasil.
+
+## Git
+
+- Conventional Commits em português, minúsculas e no imperativo: `feat: implementa listagem de pedidos`, `fix: corrige filtro de data`, `docs:`, `test:`, `chore:`, `refactor:`.
+- Um commit por etapa concluída, com build verde. Não faça commit sem o desenvolvedor pedir.
+- Nunca versione `.env` nem `.env.mcp` (apenas os arquivos `*.example`).
+
+## Comandos
+
+```powershell
+docker compose up -d                                   # SQL Server (variáveis do .env)
+dotnet build backend/MiniGestaoPedidos.sln             # build do backend
+dotnet test backend/MiniGestaoPedidos.sln              # testes do backend
+npm run build --prefix frontend                        # build do frontend (tsc -b && vite build)
+npm run lint --prefix frontend                         # oxlint
+```
+
+- Scripts SQL: `sqlcmd -C -b -f 65001 -S localhost -U sa -P <senha> -i database/<arquivo>.sql` (o `-f 65001` evita problemas com acentos).
+- API local: definir `ConnectionStrings__DefaultConnection` com host `localhost,1433` e rodar `dotnet run --project backend/src/API --launch-profile http` (o perfil define `DOTNET_ROLL_FORWARD=Major`). Swagger em `http://localhost:5000/swagger`.
+- No `.env` o host da connection string é `sqlserver` (rede do Compose); fora do Docker use `localhost`.

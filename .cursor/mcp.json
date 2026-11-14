@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "sqlserver": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "mssql-read-only-mcp@1.0.2"],
+      "envFile": "${workspaceFolder}/.env.mcp"
+    }
+  }
+}

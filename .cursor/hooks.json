@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "hooks": {
+    "stop": [
+      {
+        "command": "C:\\PROGRA~1\\Git\\bin\\bash.exe .cursor/hooks/validate-build.sh",
+        "timeout": 300,
+        "loop_limit": 3
+      }
+    ]
+  }
+}
