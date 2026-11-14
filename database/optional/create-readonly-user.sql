@@ -10,8 +10,10 @@
    Evite aspas simples (') na senha.
 
    Exemplo (a partir da raiz do repositorio):
-     docker cp database/optional/create-readonly-user.sql mini-gestao-sqlserver:/tmp/ro.sql
-     docker exec mini-gestao-sqlserver bash -c '/opt/mssql-tools18/bin/sqlcmd -C -b -f 65001 -S localhost -U sa -P "$MSSQL_SA_PASSWORD" -v MCP_READONLY_PASSWORD="<SenhaForte#123>" -i /tmp/ro.sql'
+     docker compose cp database/optional/create-readonly-user.sql sqlserver:/tmp/ro.sql
+     docker compose exec -e SQLCMDPASSWORD="$MSSQL_SA_PASSWORD" sqlserver \
+       /opt/mssql-tools18/bin/sqlcmd -C -b -f 65001 -S localhost -U sa \
+       -v MCP_READONLY_PASSWORD="<SenhaForte#123>" -i /tmp/ro.sql
 
    Idempotente: pode ser executado novamente (atualiza a senha do login).
    ============================================================================= */

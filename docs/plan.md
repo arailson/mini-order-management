@@ -200,7 +200,14 @@ flowchart LR
 
 **Entregáveis:** ambiente completo subindo com um único comando.
 
-**Critério de conclusão:** em máquina limpa, `docker compose up` entrega banco populado, API e frontend acessíveis.
+**Critério de conclusão:**
+
+- [x] Dockerfile multi-stage da API (.NET 8 SDK + ASP.NET 8 runtime) e do frontend (Node 22 + Nginx Alpine).
+- [x] `docker-compose.yml` com `sqlserver` (healthcheck + volume), `db-init` (scripts 01–03), `api` e `frontend`.
+- [x] `.env.example` com todas as variáveis, sem segredos reais.
+- [x] Em projeto Compose isolado, `docker compose up` entrega banco populado, API e frontend acessíveis.
+
+**Status:** concluída.
 
 ---
 

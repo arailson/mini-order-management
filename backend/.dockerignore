@@ -1,0 +1,10 @@
+**/bin/
+**/obj/
+**/TestResults/
+**/.vs/
+**/*.user
+**/*.suo
+**/tests/
+*.sln.docstates
+.git/
+.idea/

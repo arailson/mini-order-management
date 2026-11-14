@@ -19,7 +19,7 @@ Fonte de verdade dos requisitos: `docs/spec.md`. Plano: `docs/plan.md`.
 - `backend/` (.NET 8, `MiniGestaoPedidos.sln`): `src/{Domain,Application,Infrastructure,API}` e `tests/{UnitTests,IntegrationTests}`.
 - `frontend/`: React + TypeScript + Vite.
 - `database/`: scripts `01-create-tables.sql`, `02-create-indexes.sql`, `03-seed-data.sql` (fonte de verdade do esquema, sem migrations). Scripts opcionais ficam em `database/optional/`.
-- `docker-compose.yml` (raiz): hoje só `sqlserver` (SQL Server 2022, healthcheck, volume). `api` e `frontend` entram na Fase 5.
+- `docker-compose.yml` (raiz): `sqlserver` (SQL Server 2022, healthcheck, volume), `db-init` (scripts `database/`), `api` e `frontend`.
 - `.cursor/`: rules, hooks, skills e MCP.
 
 ## Nomenclatura
@@ -38,7 +38,7 @@ Fonte de verdade dos requisitos: `docs/spec.md`. Plano: `docs/plan.md`.
 ## Comandos
 
 ```powershell
-docker compose up -d                                   # SQL Server (variáveis do .env)
+docker compose up -d --build                           # sqlserver + db-init + api + frontend
 dotnet build backend/MiniGestaoPedidos.sln             # build do backend
 dotnet test backend/MiniGestaoPedidos.sln              # testes do backend (integração exige Docker)
 dotnet test backend/MiniGestaoPedidos.sln --filter "Category!=Integration"  # só unitários

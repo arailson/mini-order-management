@@ -4,7 +4,7 @@ Aplicação web para gerenciamento de pedidos de clientes: cadastro de pedidos, 
 
 Projeto desenvolvido com abordagem **AI First** usando o Cursor. Veja a especificação em [docs/spec.md](docs/spec.md) e o plano de implementação em [docs/plan.md](docs/plan.md).
 
-> Status: **Fases 0 (estrutura), 1 (banco de dados), 2 (backend), 3 (frontend), 4 (testes) e 7 (configuração AI First no Cursor) concluídas**. As demais fases (5 Docker e 6 documentação final) estão descritas no plano.
+> Status: **Fases 0 (estrutura), 1 (banco de dados), 2 (backend), 3 (frontend), 4 (testes), 5 (Docker) e 7 (configuração AI First no Cursor) concluídas**. A Fase 6 (otimização da query e documentação final) está descrita no plano.
 
 ## Stack
 
@@ -27,6 +27,7 @@ Projeto desenvolvido com abordagem **AI First** usando o Cursor. Veja a especifi
 │   └── optional/             # scripts opcionais (usuário readonly do MCP)
 ├── backend/
 │   ├── MiniGestaoPedidos.sln
+│   ├── Dockerfile            # multi-stage .NET 8
 │   ├── src/
 │   │   ├── API/              # controllers, middlewares, composição
 │   │   ├── Application/      # casos de uso, DTOs, validações
@@ -36,9 +37,12 @@ Projeto desenvolvido com abordagem **AI First** usando o Cursor. Veja a especifi
 │       ├── UnitTests/            # xUnit (Domain/Application)
 │       └── IntegrationTests/     # xUnit + SQL Server em Docker
 ├── frontend/             # React + TypeScript + Vite (Fase 3)
+│   ├── Dockerfile            # Node build + Nginx
+│   ├── nginx.conf
 │   ├── src/api|types|hooks|components|pages
 │   └── .env.example          # VITE_API_URL
 ├── e2e/                  # Playwright (Fase 4)
+├── docker-compose.yml    # sqlserver + db-init + api + frontend
 ├── .env.example
 ├── .env.mcp.example
 └── README.md
@@ -69,20 +73,23 @@ cp .env.example .env   # ajuste os valores; o arquivo .env não é versionado
 
 ### Banco de dados (SQL Server no Docker)
 
+Com o stack completo (`docker compose up`), o serviço `db-init` aplica automaticamente os scripts `01`–`03`. Para subir **só** o SQL Server (desenvolvimento local da API):
+
 ```powershell
-docker compose up -d          # sobe o SQL Server 2022 (usa as variáveis do .env)
+docker compose up -d sqlserver
 ```
 
-Execute os scripts de [database/](database/) em ordem (são idempotentes; usar `-f 65001` por causa dos acentos):
+Se precisar aplicar os scripts manualmente (idempotentes; `-f 65001` por causa dos acentos):
 
 ```powershell
 foreach ($f in '01-create-tables','02-create-indexes','03-seed-data') {
-  docker cp database/$f.sql mini-gestao-sqlserver:/tmp/$f.sql
-  docker exec mini-gestao-sqlserver bash -c "/opt/mssql-tools18/bin/sqlcmd -C -b -f 65001 -S localhost -U sa -P `"`$MSSQL_SA_PASSWORD`" -i /tmp/$f.sql"
+  docker compose cp "database/$f.sql" sqlserver:/tmp/$f.sql
+  docker compose exec -e SQLCMDPASSWORD=$env:MSSQL_SA_PASSWORD sqlserver `
+    /opt/mssql-tools18/bin/sqlcmd -C -b -f 65001 -S localhost -U sa -i "/tmp/$f.sql"
 }
 ```
 
-O script `01` cria o banco `MiniGestaoPedidos`. Para recomeçar do zero: `docker compose down -v`.
+O script `01` cria o banco `MiniGestaoPedidos`. Para recomeçar do zero: `docker compose down -v` (apaga o volume).
 
 ### Backend
 
@@ -101,7 +108,7 @@ dotnet run --project backend/src/API --launch-profile http
 ```
 
 - Swagger: <http://localhost:5000/swagger>
-- No `.env`, o host da connection string é `sqlserver` (rede do Docker Compose); fora do Docker use `localhost,1433`.
+- Fora do Docker use `localhost,1433` na connection string (veja `.env.example`). Dentro do Compose a API recebe automaticamente o host `sqlserver`.
 - O perfil `http` define `DOTNET_ROLL_FORWARD=Major`, útil quando só há o runtime ASP.NET Core mais novo instalado (os projetos têm alvo `net8.0`). Se você tem o runtime 8, pode remover essa variável de `backend/src/API/Properties/launchSettings.json`.
 - CORS: origens liberadas em `Cors:AllowedOrigins` (`appsettings.json`; padrão `http://localhost:5173` e `http://localhost:3000`), sobrescrevíveis por `Cors__AllowedOrigins__0`.
 
@@ -177,14 +184,35 @@ npm test --prefix e2e
 # ou: npm run test:headed --prefix e2e
 ```
 
-O Playwright sobe API (`dotnet run` com connection string do `.env`) e frontend (`npm run dev`) automaticamente, ou reaproveita se já estiverem rodando. O fluxo coberto: abrir a tela, criar pedido e validar na listagem filtrada.
+O Playwright sobe API (`dotnet run` com connection string do `.env`) e frontend (`npm run dev`) automaticamente, ou reaproveita se já estiverem rodando. Com o stack Docker no ar, use `E2E_BASE_URL=http://localhost:3000` para testar contra o Compose (sem subir Vite/`dotnet run`). O fluxo coberto: abrir a tela, criar pedido e validar na listagem filtrada.
 
-### Docker Compose
+### Docker Compose (stack completo)
 
-Hoje o `docker-compose.yml` sobe apenas o SQL Server. Os serviços `api` e `frontend` serão adicionados na Fase 5, com o objetivo de subir tudo com:
+Um único comando sobe SQL Server (com scripts 01–03), API e frontend:
 
-```bash
-docker compose up
+```powershell
+# Copie .env.example -> .env e defina MSSQL_SA_PASSWORD
+docker compose up -d --build
+```
+
+| Serviço | URL padrão | Observação |
+| ------- | ---------- | ---------- |
+| Frontend | <http://localhost:3000> | Nginx servindo o build Vite |
+| API / Swagger | <http://localhost:5000/swagger> | Porta interna do container: 8080 |
+| SQL Server | `127.0.0.1:1433` | Publicado só em loopback |
+
+Ordem de subida: `sqlserver` (healthy) → `db-init` (aplica scripts e encerra) → `api` (healthy) → `frontend`.
+
+Avisos:
+
+- Pare a API local (`dotnet run` na porta 5000) antes do `compose up`, ou mude `API_PORT` no `.env`. No macOS a porta 5000 pode estar com o AirPlay Receiver.
+- `VITE_API_URL` é embutida no build do frontend. Se mudar `API_PORT` ou a URL, rode `docker compose up -d --build frontend`.
+- Apple Silicon: a imagem do SQL Server 2022 é amd64; se necessário, adicione `platform: linux/amd64` no serviço `sqlserver`.
+- E2E contra o stack: `$env:E2E_BASE_URL="http://localhost:3000"; npm test --prefix e2e` (não sobe Vite/`dotnet run`).
+
+```powershell
+docker compose down        # para os containers (mantém o volume)
+docker compose down -v     # também apaga os dados do SQL Server
 ```
 
 ## Configuração AI First no Cursor
@@ -236,8 +264,10 @@ Passo a passo:
 2. Crie o usuário somente leitura (informe a senha por variável do sqlcmd; evite aspas simples):
 
    ```powershell
-   docker cp database/optional/create-readonly-user.sql mini-gestao-sqlserver:/tmp/ro.sql
-   docker exec mini-gestao-sqlserver bash -c '/opt/mssql-tools18/bin/sqlcmd -C -b -f 65001 -S localhost -U sa -P "$MSSQL_SA_PASSWORD" -v MCP_READONLY_PASSWORD="<SenhaForte#123>" -i /tmp/ro.sql'
+   docker compose cp database/optional/create-readonly-user.sql sqlserver:/tmp/ro.sql
+   docker compose exec -e SQLCMDPASSWORD=$env:MSSQL_SA_PASSWORD sqlserver `
+     /opt/mssql-tools18/bin/sqlcmd -C -b -f 65001 -S localhost -U sa `
+     -v MCP_READONLY_PASSWORD="<SenhaForte#123>" -i /tmp/ro.sql
    ```
 
 3. Copie `.env.mcp.example` para `.env.mcp` e coloque a mesma senha em `SQL_PASSWORD`.
