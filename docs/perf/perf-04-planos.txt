@@ -1,0 +1,49 @@
+﻿========== Plano ESTIMADO: ORIGINAL ==========
+SELECT c.Nome, SUM(i.Quantidade * i.PrecoUnitario) AS Total
+FROM Clientes c
+LEFT JOIN Pedidos p ON p.ClienteId = c.Id
+LEFT JOIN ItensPedido i ON i.PedidoId = p.Id
+WHERE YEAR(p.DataPedido) = 2026
+GROUP BY c.Nome
+ORDER BY Total
+OPTION (MAXDOP 1);
+  |--Sort(ORDER BY:([Expr1003] ASC))
+       |--Compute Scalar(DEFINE:([Expr1003]=CASE WHEN [Expr1012]=(0) THEN NULL ELSE [Expr1013] END))
+            |--Hash Match(Aggregate, HASH:([c].[Nome]), ...)
+                 |--Compute Scalar(DEFINE:([Expr1004]=...Quantidade*PrecoUnitario...))
+                      |--Hash Match(Left Outer Join, HASH:([p].[Id])=([i].[PedidoId]), ...)
+                           |--Filter(WHERE:([Expr1005]=(2026)))
+                           |    |--Compute Scalar(DEFINE:([Expr1005]=datepart(year,[p].[DataPedido])))
+                           |         |--Hash Match(Left Outer Join, HASH:([c].[Id])=([p].[ClienteId]))
+                           |              |--Clustered Index Scan(OBJECT:([Clientes].[PK_Clientes] AS [c]))
+                           |              |--Clustered Index Scan(OBJECT:([Pedidos].[PK_Pedidos] AS [p]))
+                           |--Clustered Index Scan(OBJECT:([ItensPedido].[PK_ItensPedido] AS [i]), WHERE:(PROBE(...)))
+
+========== Plano ESTIMADO: OTIMIZADA ==========
+SELECT TOP 5
+    c.Id AS ClienteId,
+    c.Nome,
+    SUM(i.Quantidade * i.PrecoUnitario) AS Total
+FROM Clientes c
+INNER JOIN Pedidos p ON p.ClienteId = c.Id
+INNER JOIN ItensPedido i ON i.PedidoId = p.Id
+WHERE p.DataPedido >= '20260101'
+  AND p.DataPedido < '20270101'
+GROUP BY c.Id, c.Nome
+ORDER BY Total DESC
+OPTION (MAXDOP 1);
+  |--Top(TOP EXPRESSION:((5)))
+       |--Nested Loops(Inner Join, OUTER REFERENCES:([p].[ClienteId], ...) WITH ORDERED PREFETCH)
+            |--Sort(ORDER BY:([Expr1003] DESC))
+            |    |--Hash Match(Aggregate, HASH:([p].[ClienteId]) DEFINE:([Expr1003]=SUM([Expr1004])))
+            |         |--Hash Match(Inner Join, HASH:([p].[Id])=([i].[PedidoId]) ...)
+            |              |--Clustered Index Scan(OBJECT:([Pedidos].[PK_Pedidos] AS [p]),
+            |              |     WHERE:([p].[DataPedido]>='2026-01-01' AND [p].[DataPedido]<'2027-01-01'))
+            |              |--Compute Scalar(...Quantidade*PrecoUnitario...)
+            |                   |--Clustered Index Scan(OBJECT:([ItensPedido].[PK_ItensPedido] AS [i]), WHERE:(PROBE(...)))
+            |--Clustered Index Seek(OBJECT:([Clientes].[PK_Clientes] AS [c]), SEEK:([c].[Id]=[p].[ClienteId]))
+
+========== Resumo planos reais (DMV) ==========
+Variante   execution_count  total_logical_reads  worker_time_us  elapsed_time_us
+OTIMIZADA  1                8457                 197256          197259
+ORIGINAL   1                8516                 271069          272565

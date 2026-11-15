@@ -1,0 +1,25 @@
+Changed database context to 'MiniGestaoPedidos'.
+--- Contagens seed ---
+T           Q          
+----------- -----------
+Clientes             12
+Pedidos              40
+ItensPedido          72
+--- ORIGINAL ---
+Nome                                                                                                                                                   Total                                   
+------------------------------------------------------------------------------------------------------------------------------------------------------ ----------------------------------------
+Rafael Costa                                                                                                                                                                            1229.30
+Fernanda Lima                                                                                                                                                                           1339.50
+Ana Oliveira                                                                                                                                                                            2468.40
+Pedro Santos                                                                                                                                                                            7257.80
+Carlos Pereira                                                                                                                                                                          8667.10
+Maria Souza                                                                                                                                                                            10815.80
+João Silva                                                                                                                                                                             15406.10
+--- OTIMIZADA ---
+ClienteId   Nome                                                                                                                                                   Total                                   
+----------- ------------------------------------------------------------------------------------------------------------------------------------------------------ ----------------------------------------
+          1 João Silva                                                                                                                                                                             14286.80
+          2 Maria Souza                                                                                                                                                                            10486.30
+          3 Carlos Pereira                                                                                                                                                                          8667.10
+          7 Pedro Santos                                                                                                                                                                            7257.80
+          4 Ana Oliveira                                                                                                                                                                            2468.40

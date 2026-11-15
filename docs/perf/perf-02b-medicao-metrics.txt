@@ -1,0 +1,27 @@
+﻿###MEDICAO###ORIGINAL###
+   CPU time = 0 ms,  elapsed time = 0 ms.
+Table 'ItensPedido'. Scan count 1, logical reads 6328, physical reads 0, page server reads 0, read-ahead reads 8, page server read-ahead reads 0, lob logical reads 0, lob physical reads 0, lob page server reads 0, lob read-ahead reads 0, lob page server read-ahead reads 0.
+Table 'Pedidos'. Scan count 1, logical reads 2111, physical reads 1, page server reads 0, read-ahead reads 245, page server read-ahead reads 0, lob logical reads 0, lob physical reads 0, lob page server reads 0, lob read-ahead reads 0, lob page server read-ahead reads 0.
+Table 'Clientes'. Scan count 1, logical reads 77, physical reads 1, page server reads 0, read-ahead reads 82, page server read-ahead reads 0, lob logical reads 0, lob physical reads 0, lob page server reads 0, lob read-ahead reads 0, lob page server read-ahead reads 0.
+Table 'Worktable'. Scan count 0, logical reads 0, physical reads 0, page server reads 0, read-ahead reads 0, page server read-ahead reads 0, lob logical reads 0, lob physical reads 0, lob page server reads 0, lob read-ahead reads 0, lob page server read-ahead reads 0.
+   CPU time = 270 ms,  elapsed time = 268 ms.
+   CPU time = 1 ms,  elapsed time = 2 ms.
+   CPU time = 0 ms,  elapsed time = 0 ms.
+###MEDICAO###INTERMEDIARIA###
+   CPU time = 0 ms,  elapsed time = 0 ms.
+Table 'ItensPedido'. Scan count 1, logical reads 6328, physical reads 0, page server reads 0, read-ahead reads 8, page server read-ahead reads 0, lob logical reads 0, lob physical reads 0, lob page server reads 0, lob read-ahead reads 0, lob page server read-ahead reads 0.
+Table 'Pedidos'. Scan count 1, logical reads 2111, physical reads 1, page server reads 0, read-ahead reads 245, page server read-ahead reads 0, lob logical reads 0, lob physical reads 0, lob page server reads 0, lob read-ahead reads 0, lob page server read-ahead reads 0.
+Table 'Clientes'. Scan count 1, logical reads 77, physical reads 1, page server reads 0, read-ahead reads 82, page server read-ahead reads 0, lob logical reads 0, lob physical reads 0, lob page server reads 0, lob read-ahead reads 0, lob page server read-ahead reads 0.
+Table 'Worktable'. Scan count 0, logical reads 0, physical reads 0, page server reads 0, read-ahead reads 0, page server read-ahead reads 0, lob logical reads 0, lob physical reads 0, lob page server reads 0, lob read-ahead reads 0, lob page server read-ahead reads 0.
+   CPU time = 229 ms,  elapsed time = 232 ms.
+   CPU time = 4 ms,  elapsed time = 2 ms.
+   CPU time = 0 ms,  elapsed time = 0 ms.
+###MEDICAO###OTIMIZADA###
+   CPU time = 0 ms,  elapsed time = 0 ms.
+Table 'ItensPedido'. Scan count 1, logical reads 6328, physical reads 0, page server reads 0, read-ahead reads 8, page server read-ahead reads 0, lob logical reads 0, lob physical reads 0, lob page server reads 0, lob read-ahead reads 0, lob page server read-ahead reads 0.
+Table 'Pedidos'. Scan count 1, logical reads 2111, physical reads 1, page server reads 0, read-ahead reads 245, page server read-ahead reads 0, lob logical reads 0, lob physical reads 0, lob page server reads 0, lob read-ahead reads 0, lob page server read-ahead reads 0.
+Table 'Worktable'. Scan count 0, logical reads 0, physical reads 0, page server reads 0, read-ahead reads 0, page server read-ahead reads 0, lob logical reads 0, lob physical reads 0, lob page server reads 0, lob read-ahead reads 0, lob page server read-ahead reads 0.
+Table 'Clientes'. Scan count 0, logical reads 496, physical reads 1, page server reads 0, read-ahead reads 64, page server read-ahead reads 0, lob logical reads 0, lob physical reads 0, lob page server reads 0, lob read-ahead reads 0, lob page server read-ahead reads 0.
+   CPU time = 201 ms,  elapsed time = 201 ms.
+   CPU time = 0 ms,  elapsed time = 0 ms.
+###MEDICAO###FIM###

@@ -1,0 +1,28 @@
+Changed database context to 'MiniGestaoPedidos'.
+perf-03: criado IX_Pedidos_DataPedido_InclCliente.
+perf-03: criado IX_ItensPedido_PedidoId_InclQtdPreco.
+========== MEDICAO: OTIMIZADA com indices de cobertura (MAXDOP 1) ==========
+
+ SQL Server Execution Times:
+   CPU time = 0 ms,  elapsed time = 0 ms.
+SQL Server parse and compile time: 
+   CPU time = 10 ms, elapsed time = 10 ms.
+ClienteId   Nome                                                                                                                                                   Total                                   
+----------- ------------------------------------------------------------------------------------------------------------------------------------------------------ ----------------------------------------
+        730 Cliente Perf 00718                                                                                                                                                                    483930.00
+       2649 Cliente Perf 02637                                                                                                                                                                    482750.00
+        669 Cliente Perf 00657                                                                                                                                                                    482750.00
+        670 Cliente Perf 00658                                                                                                                                                                    482400.00
+       2650 Cliente Perf 02638                                                                                                                                                                    482400.00
+Table 'ItensPedido'. Scan count 1, logical reads 5042, physical reads 0, page server reads 0, read-ahead reads 98, page server read-ahead reads 0, lob logical reads 0, lob physical reads 0, lob page server reads 0, lob read-ahead reads 0, lob page server read-ahead reads 0.
+Table 'Pedidos'. Scan count 1, logical reads 934, physical reads 0, page server reads 0, read-ahead reads 63, page server read-ahead reads 0, lob logical reads 0, lob physical reads 0, lob page server reads 0, lob read-ahead reads 0, lob page server read-ahead reads 0.
+Table 'Worktable'. Scan count 0, logical reads 0, physical reads 0, page server reads 0, read-ahead reads 0, page server read-ahead reads 0, lob logical reads 0, lob physical reads 0, lob page server reads 0, lob read-ahead reads 0, lob page server read-ahead reads 0.
+Table 'Clientes'. Scan count 0, logical reads 519, physical reads 1, page server reads 0, read-ahead reads 64, page server read-ahead reads 0, lob logical reads 0, lob physical reads 0, lob page server reads 0, lob read-ahead reads 0, lob page server read-ahead reads 0.
+Table 'Worktable'. Scan count 0, logical reads 0, physical reads 0, page server reads 0, read-ahead reads 0, page server read-ahead reads 0, lob logical reads 0, lob physical reads 0, lob page server reads 0, lob read-ahead reads 0, lob page server read-ahead reads 0.
+
+ SQL Server Execution Times:
+   CPU time = 176 ms,  elapsed time = 185 ms.
+
+ SQL Server Execution Times:
+   CPU time = 0 ms,  elapsed time = 0 ms.
+perf-03: indices de cobertura removidos. Concluido.

@@ -1,0 +1,24 @@
+Changed database context to 'MiniGestaoPedidos'.
+perf-01: iniciando geracao de volume. Pedidos atuais: 40
+perf-01: tally criado.
+perf-01: clientes inseridos: 5000
+perf-01: lote de pedidos 1 (1 linhas).
+perf-01: lote de pedidos 2 (1 linhas).
+perf-01: lote de pedidos 3 (1 linhas).
+perf-01: lote de pedidos 4 (1 linhas).
+perf-01: lote de pedidos 5 (1 linhas).
+perf-01: lote de pedidos 6 (1 linhas).
+perf-01: lote de pedidos 7 (1 linhas).
+perf-01: lote de pedidos 8 (1 linhas).
+perf-01: lote de pedidos 9 (1 linhas).
+perf-01: lote de pedidos 10 (1 linhas).
+perf-01: itens inseridos: 1500000
+perf-01: ValorTotal atualizado nos pedidos novos.
+perf-01: contagens finais:
+Tabela      Qtd        
+----------- -----------
+Clientes           5012
+Produtos             10
+Pedidos          500040
+ItensPedido     1500072
+perf-01: concluido.

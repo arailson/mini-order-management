@@ -1,7 +1,7 @@
 # Plano de Implementação — Mini Gestão de Pedidos
 
 - **Referência:** [docs/spec.md](spec.md) (v1.1)
-- **Status:** Plano inicial gerado com apoio da IA (Cursor), sujeito a revisão do desenvolvedor
+- **Status:** Fases 0–7 concluídas (Fase 6: query medida e documentação fechada; vídeo de demonstração pendente do desenvolvedor)
 - **Abordagem:** AI First, com entrega incremental (um commit por etapa concluída)
 
 ---
@@ -227,11 +227,28 @@ flowchart LR
 - Atualizar este `plan.md` com ajustes e decisões da execução.
 - Preparar o vídeo de demonstração (até 10 minutos).
 
-**Entregáveis:** README completo e `plan.md` atualizado.
+**Critério de conclusão / checklist**
 
-**Critério de conclusão:** todos os itens do README exigidos pelos critérios de aceite estão presentes.
+- [x] Query original (texto do e-mail do teste, fornecido pelo desenvolvedor) e otimizada (spec) executadas e comparadas em SQL Server 2022.
+- [x] Planos estimados (`SHOWPLAN_TEXT`), índices, volume e `STATISTICS IO/TIME` registrados em `docs/perf/` e no README.
+- [x] Corretude no seed: otimizada retorna clientes 1, 2, 3, 7 e 4; original funde homônimos e ordena ASC.
+- [x] Volume sintético em projeto Compose isolado (~500k pedidos); índices de cobertura avaliados sem alterar `02-create-indexes.sql`.
+- [x] README completo: execução (Compose e local), testes, decisões, Cursor, limitações, resultado da query.
+- [x] Este `plan.md` atualizado (ajustes, decisões, status da fase).
+- [ ] Vídeo de demonstração (até 10 minutos) — **pendente, responsabilidade do desenvolvedor**.
+
+**Decisões finais desta fase**
+
+- A query original usada na comparação é a do enunciado/e-mail (não reconstruída).
+- Medição em banco descartável (`PerfExperiment`, `docker compose -p perf`) para não poluir o desenvolvimento.
+- Com ~67% dos pedidos em 2026, o otimizador manteve *Clustered Index Scan* em `Pedidos` mesmo com range sargável; o ganho principal da otimizada é corretude + CPU (~27%), não redução drástica de I/O. Índices de cobertura ficam como recomendação opcional.
+
+**Entregáveis:** README completo, `docs/perf/`, scripts em `database/optional/perf/` e este `plan.md` atualizado.
+
+**Status:** concluída (exceto vídeo).
 
 ---
+
 
 ### Fase 7 - Configuração AI First no Cursor
 
@@ -260,17 +277,25 @@ flowchart LR
 
 ## 4. Ajustes do desenvolvedor e decisões alteradas ou rejeitadas
 
-Seção a ser preenchida durante a execução, com o formato abaixo.
-
 ### Ajustes realizados pelo desenvolvedor
 
-- _(nenhum registrado até o momento)_
+- **TypeScript:** a menção a “TypeScript 8” na demanda foi corrigida para **7.0.2** (versão estável existente), com `strict: true`.
+- **Escopo da listagem:** o pedido de coluna “nome do pedido” foi esclarecido — a UI lista produtos dos itens; um pedido pode ter vários produtos.
+- **Endpoints de apoio:** `GET /clientes` e `GET /produtos` aprovados explicitamente para o frontend (fora da spec).
+- **Hook no Windows:** opção `gitbash_abs` — `hooks.json` chama `C:\PROGRA~1\Git\bin\bash.exe` (evita stub WSL).
+- **API local:** connection string via variável de ambiente e scripts 01–03 aplicados no container para destravar o teste manual.
+- **Query original (Fase 6):** texto exato fornecido a partir do e-mail do teste (não reconstrução).
 
 ### Decisões alteradas ou rejeitadas
 
 | Decisão original (IA) | Alternativa adotada | Justificativa técnica |
 | --------------------- | ------------------- | --------------------- |
-| _(a preencher)_ | _(a preencher)_ | _(a preencher)_ |
+| Testcontainers.MsSql para integração | Fixture via CLI do Docker | Docker.DotNet lança `NotImplementedException` no named pipe com .NET 11 no Windows |
+| IntegrationTests em `net8.0` | TFM `net11.0` + Mvc.Testing 11 | TestHost incompatível com roll-forward net8 + runtime 11 (`PipeWriter.UnflushedBytes`) |
+| FluentAssertions 8.x | FluentAssertions 6.12.2 | 8.x exige licença comercial |
+| `container_name` fixo no Compose | Sem `container_name` | Permite projetos Compose paralelos (`-p perf`, etc.) |
+| Middleware com `WriteAsync` via PipeWriter avançado | `HttpResponse.WriteAsync` do JSON serializado | Evita erro de API do TestHost no cenário net8/net11 |
+| Reconstruir a query original a partir da lista de problemas | Usar o SQL enviado no e-mail do teste | Fonte autoritativa do enunciado |
 
 ---
 
