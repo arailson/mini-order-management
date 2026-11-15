@@ -505,21 +505,21 @@ O arquivo `docs/plan.md` deverá conter:
 
 ## 12. Critérios de aceite
 
-- [ ] O banco SQL Server possui as quatro tabelas requeridas.
-- [ ] As chaves primárias, estrangeiras e índices estão configurados.
-- [ ] Os scripts de criação e carga de dados estão versionados.
-- [ ] A API permite criar pedidos com validação de cliente e estoque.
-- [ ] A API permite listar pedidos com filtros e paginação.
-- [ ] A API permite consultar o ranking dos cinco maiores clientes.
-- [ ] O frontend permite criar e consultar pedidos.
-- [ ] Os testes unitários cobrem as regras de negócio.
-- [ ] Os testes de integração executam contra SQL Server real.
-- [ ] A query otimizada está documentada no README.
-- [ ] O projeto sobe com Docker Compose.
-- [ ] O README documenta a execução, os testes e as decisões técnicas.
-- [ ] O Cursor está configurado com Rules, Hooks, Skills e MCP.
-- [ ] O plano de implementação foi elaborado com o Cursor e documentado.
-- [ ] O histórico de commits demonstra evolução incremental.
+- [x] O banco SQL Server possui as quatro tabelas requeridas.
+- [x] As chaves primárias, estrangeiras e índices estão configurados.
+- [x] Os scripts de criação e carga de dados estão versionados.
+- [x] A API permite criar pedidos com validação de cliente e estoque.
+- [x] A API permite listar pedidos com filtros e paginação.
+- [x] A API permite consultar o ranking dos cinco maiores clientes.
+- [x] O frontend permite criar e consultar pedidos.
+- [x] Os testes unitários cobrem as regras de negócio.
+- [x] Os testes de integração executam contra SQL Server real.
+- [x] A query otimizada está documentada no README.
+- [x] O projeto sobe com Docker Compose.
+- [x] O README documenta a execução, os testes e as decisões técnicas.
+- [x] O Cursor está configurado com Rules, Hooks, Skills e MCP.
+- [x] O plano de implementação foi elaborado com o Cursor e documentado.
+- [x] O histórico de commits demonstra evolução incremental.
 - [ ] O vídeo de demonstração possui até 10 minutos.
 
 ---

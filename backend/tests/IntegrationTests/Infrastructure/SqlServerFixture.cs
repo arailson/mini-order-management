@@ -9,10 +9,10 @@ namespace IntegrationTests.Infrastructure;
 /// Sobe um SQL Server 2022 real em Docker (uma vez por execução), aplica os scripts 01-03
 /// e expõe factory + connection string.
 ///
-/// Observação: a lib Testcontainers.MsSql permanece referenciada no .csproj (conforme o plano),
-/// mas neste ambiente (Windows + SDK/.NET 11) o Docker.DotNet falha no named pipe
-/// (NotImplementedException em DockerPipeStream.Flush). A fixture usa a CLI do Docker
-/// com o mesmo ciclo de vida (start → scripts → dispose).
+/// Observação: o plano previa Testcontainers.MsSql, mas no ambiente de desenvolvimento
+/// (Windows + .NET 11) o Docker.DotNet falha no named pipe (NotImplementedException em
+/// DockerPipeStream.Flush). A fixture usa a CLI do Docker com o mesmo ciclo de vida
+/// (start → scripts → dispose), sem dependência do pacote Testcontainers.
 /// </summary>
 public sealed class SqlServerFixture : IAsyncLifetime
 {

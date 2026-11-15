@@ -5,7 +5,7 @@ using Microsoft.Extensions.Configuration;
 namespace IntegrationTests.Infrastructure;
 
 /// <summary>
-/// WebApplicationFactory apontando a connection string para o SQL Server do Testcontainers.
+/// WebApplicationFactory apontando a connection string para o SQL Server em container criado pela fixture.
 /// </summary>
 public sealed class ApiFactory : WebApplicationFactory<Program>
 {

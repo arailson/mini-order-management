@@ -40,7 +40,7 @@ alwaysApply: false
 ## Testes
 
 - `tests/UnitTests` (xUnit + NSubstitute + FluentAssertions 6.x): Domain e Application com fakes/dublês; sem banco. Cobrir criação válida, cliente/produto inexistente, estoque insuficiente, sem itens, quantidade inválida, total, estoque atualizado e falha transacional.
-- `tests/IntegrationTests` (xUnit + `WebApplicationFactory` + SQL Server real em Docker, scripts `database/` no setup): POST /pedidos (201/404/409/400), GET /pedidos (filtros/paginação) e top-clientes. Trait `Category=Integration`. TFM `net11.0` neste ambiente (TestHost); a API segue `net8.0`.
+- `tests/IntegrationTests` (xUnit + `WebApplicationFactory` + SQL Server real em Docker, scripts `database/` no setup): POST /pedidos (201/404/409/400), GET /pedidos (filtros/paginação) e top-clientes. Trait `Category=Integration`. TFM `net8.0` por padrão (mesmo da API); em máquinas só com o runtime ASP.NET Core 11 use `$env:IntegrationTestsTfm='net11.0'` (ou `-p:IntegrationTestsTfm=net11.0`).
 - E2E em `e2e/` (Playwright): criar pedido na UI e validar na listagem (`npm test --prefix e2e`).
 - Nome dos testes: `Metodo_Cenario_ResultadoEsperado`. Padrão Arrange/Act/Assert.
 - Antes de concluir: `dotnet build backend/MiniGestaoPedidos.sln` e `dotnet test` (Docker ligado para integração) sem erros.

@@ -50,8 +50,10 @@ Referências do backend: `Application` → `Domain`; `Infrastructure` → `Appli
 - [Docker](https://www.docker.com/) e Docker Compose
 - Git
 
+Para subir com Docker Compose **não é necessário criar o `.env`**: o `docker-compose.yml` traz valores padrão de desenvolvimento (senha do SQL Server, portas). Copie o exemplo apenas para personalizar valores ou para rodar API/E2E fora do Docker:
+
 ```bash
-cp .env.example .env   # ajuste MSSQL_SA_PASSWORD e demais valores; .env não é versionado
+cp .env.example .env   # opcional; ajuste MSSQL_SA_PASSWORD e demais valores; .env não é versionado
 ```
 
 ## Como executar
@@ -59,9 +61,10 @@ cp .env.example .env   # ajuste MSSQL_SA_PASSWORD e demais valores; .env não é
 ### Opção A — Docker Compose (recomendado)
 
 ```powershell
-# Copie .env.example -> .env e defina MSSQL_SA_PASSWORD
-docker compose up -d --build
+docker compose up -d --build   # (ou apenas: docker compose up) - sem .env e sem passos manuais
 ```
+
+Depois de subir, abra o frontend e a API nas URLs abaixo. Os scripts SQL (criação, índices e seed) são aplicados automaticamente.
 
 | Serviço | URL padrão | Observação |
 | ------- | ---------- | ---------- |
@@ -127,8 +130,14 @@ dotnet test backend/MiniGestaoPedidos.sln --filter "Category!=Integration"
 ```
 
 - Unitários: Domain + Application (NSubstitute / `FakeUnitOfWork`), sem banco.
-- Integração: `WebApplicationFactory` + SQL Server real em Docker; scripts 01–03 no setup; reset do seed por teste.
-- Windows + ASP.NET 11: `IntegrationTests` usa TFM `net11.0` (TestHost alinhado ao runtime). A API permanece `net8.0`. A fixture usa a CLI do Docker (o pacote Testcontainers está referenciado, mas o Docker.DotNet quebra no named pipe com .NET 11 neste ambiente).
+- Integração: `WebApplicationFactory` + SQL Server real em Docker; scripts 01–03 no setup; reset do seed por teste. O SQL Server de teste sobe em container próprio (porta aleatória), criado pela fixture via CLI do Docker.
+- Os projetos de teste usam `net8.0` por padrão. **Windows com apenas o runtime ASP.NET Core 11 instalado:** o TestHost 8 com roll-forward quebra a serialização JSON; nesse caso, rode a integração com o TFM `net11.0` (a API continua `net8.0`):
+
+  ```powershell
+  $env:IntegrationTestsTfm = 'net11.0'
+  dotnet test backend/tests/IntegrationTests/IntegrationTests.csproj
+  # ou: dotnet test backend/tests/IntegrationTests/IntegrationTests.csproj -p:IntegrationTestsTfm=net11.0
+  ```
 
 ### E2E (Playwright)
 
@@ -288,7 +297,7 @@ Somente `SELECT`; login em `db_datareader`. Não use em produção.
 
 - **TypeScript “8”:** a especificação citava TS 8; a versão estável usada foi **7.0.2** (não existe TypeScript 8).
 - **API local 500 / login failed / erro 4060:** `dotnet run` não carrega `.env`; foi preciso exportar `ConnectionStrings__DefaultConnection` e aplicar os scripts SQL.
-- **Testcontainers + .NET 11:** Docker.DotNet falhou no named pipe no Windows; a fixture passou a usar a **CLI do Docker**; `IntegrationTests` em `net11.0`.
+- **Testcontainers + .NET 11:** Docker.DotNet falhou no named pipe no Windows; a fixture passou a usar a **CLI do Docker** (o pacote foi removido). Para o TestHost, `IntegrationTests` ganhou o override `IntegrationTestsTfm=net11.0` (padrão `net8.0`).
 - **FluentAssertions 8.x:** licença comercial → permaneceu em **6.12.2**.
 - **Hook CRLF:** script `.sh` quebrava no Bash; normalizado para LF + `.gitattributes`.
 - **oxlint `set-state-in-effect`:** hooks/modal refatorados (async IIFE / remount por `key`).
@@ -302,9 +311,13 @@ O Cursor acelerou a entrega faseada e manteve o alinhamento com a spec via rules
 
 - Sem autenticação/autorização (fora do escopo da spec).
 - `GET /clientes` e `GET /produtos` são exceções aprovadas, não estão na spec original.
-- `IntegrationTests` em `net11.0` com fixture via Docker CLI; Testcontainers referenciado mas não usado de fato neste ambiente.
+- Testes de integração usam fixture via CLI do Docker (não Testcontainers, que falhou no named pipe do Windows com .NET 11); em máquinas só com o runtime ASP.NET Core 11 é preciso o override `IntegrationTestsTfm=net11.0` (veja Testes).
 - API local exige variável de ambiente de connection string (`dotnet run` não lê `.env`).
-- MCP depende de pacote de terceiros via `npx` (versão fixada).
+- O Compose usa uma senha padrão de desenvolvimento para o SQL Server (a mesma de `.env.example`) para subir sem `.env`; ela só deve ser usada neste contexto local/de avaliação, nunca em produção.
+- Não há pipeline de GitHub Actions (diferencial não implementado).
+- MCP depende de pacote de terceiros via `npx` (versão fixada). A seção de MCP descreve configuração e exemplo de uso, sem registro de uso real durante o desenvolvimento.
+- O E2E cria um pedido para Pedro Santos no banco em uso e baixa estoque, então os totais do ranking mudam em relação ao seed (exemplo: após o E2E, Pedro Santos passa de 7.257,80 para 7.347,50). Antes de demonstrar valores do seed, use `docker compose down -v`.
 - E2E cobre o fluxo principal de criar e listar pedido.
 - Volume da investigação de performance é sintético e descartável; não faz parte do seed oficial.
+- As medições de CPU e tempo da investigação são de execução única e indicativas (as leituras lógicas são praticamente iguais). O plano de execução real não foi arquivado: ficam apenas os planos estimados e o resumo do DMV em `docs/perf/`.
 - Vídeo de demonstração (critério de aceite) é responsabilidade do desenvolvedor.

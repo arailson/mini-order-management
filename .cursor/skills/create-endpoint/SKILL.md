@@ -78,7 +78,7 @@ if (erros.Count > 0) throw new ValidationException(erros);   // 400
 ### 7. Testes
 
 - **Unitários** (`tests/UnitTests`): Service e Domain com repositórios falsos; cobrir sucesso, validação (400), inexistente (404) e conflito (409) quando aplicável. Nome `Metodo_Cenario_Resultado`.
-- **Integração** (`tests/IntegrationTests`): `WebApplicationFactory<Program>` + Testcontainers SQL Server real, scripts de `database/` aplicados; chamar o endpoint HTTP e validar status e corpo.
+- **Integração** (`tests/IntegrationTests`): `WebApplicationFactory<Program>` + SQL Server real em Docker (fixture via CLI do Docker), scripts de `database/` aplicados; chamar o endpoint HTTP e validar status e corpo.
 
 ### 8. Verificação
 

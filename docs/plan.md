@@ -290,8 +290,8 @@ flowchart LR
 
 | Decisão original (IA) | Alternativa adotada | Justificativa técnica |
 | --------------------- | ------------------- | --------------------- |
-| Testcontainers.MsSql para integração | Fixture via CLI do Docker | Docker.DotNet lança `NotImplementedException` no named pipe com .NET 11 no Windows |
-| IntegrationTests em `net8.0` | TFM `net11.0` + Mvc.Testing 11 | TestHost incompatível com roll-forward net8 + runtime 11 (`PipeWriter.UnflushedBytes`) |
+| Testcontainers.MsSql para integração | Fixture via CLI do Docker (pacote removido do `.csproj`) | Docker.DotNet lança `NotImplementedException` no named pipe com .NET 11 no Windows; o pacote não usado também trazia avisos NU1903 (SSH.NET) |
+| IntegrationTests em `net8.0` | `net8.0` por padrão, com override `IntegrationTestsTfm=net11.0` (Mvc.Testing 8 ou 11 condicional) | Na máquina de desenvolvimento só há o runtime ASP.NET Core 11 e o TestHost 8 com roll-forward falha (`PipeWriter.UnflushedBytes`). Primeiro adotou-se `net11.0` fixo; a auditoria final mostrou que isso quebraria quem só tem o SDK 8, então o padrão voltou a `net8.0` |
 | FluentAssertions 8.x | FluentAssertions 6.12.2 | 8.x exige licença comercial |
 | `container_name` fixo no Compose | Sem `container_name` | Permite projetos Compose paralelos (`-p perf`, etc.) |
 | Middleware com `WriteAsync` via PipeWriter avançado | `HttpResponse.WriteAsync` do JSON serializado | Evita erro de API do TestHost no cenário net8/net11 |
@@ -305,7 +305,7 @@ flowchart LR
 - **Filtro por período:** usar limite superior exclusivo (`DataPedido < dataFim + 1 dia`) para incluir todo o último dia, e evitar funções como `YEAR()` sobre a coluna filtrada.
 - **Ordem de inicialização:** a API só deve subir após o SQL Server estar saudável e os scripts executados. Usar healthcheck e `depends_on` com `service_healthy`.
 - **Scripts em banco novo:** a imagem do SQL Server não executa scripts automaticamente. Prever um container ou entrypoint de inicialização.
-- **Testcontainers:** exige Docker disponível na máquina que roda os testes de integração.
+- **Testes de integração:** exigem Docker disponível na máquina que os roda (a fixture sobe o SQL Server via CLI do Docker; o plano original previa Testcontainers).
 - **Escopo:** endpoints de apoio ao frontend (clientes e produtos) não constam na spec e exigem aprovação.
 - **Código gerado por IA:** nada é considerado correto sem revisão, execução dos testes e validação manual.
 

@@ -2,10 +2,15 @@
 
   <PropertyGroup>
     <!--
-      net11.0: o ambiente só tem o runtime ASP.NET Core 11. O TestHost 8 + RollForward
-      Major quebra WriteAsJsonAsync (PipeWriter.UnflushedBytes). A API permanece net8.0.
+      Padrão: net8.0 (mesmo alvo da API), compatível com quem tem apenas o SDK/runtime 8.
+      Override para ambientes que só possuem o runtime ASP.NET Core 11 (ex.: esta máquina
+      Windows), onde o TestHost 8 + RollForward Major quebra WriteAsJsonAsync
+      (PipeWriter.UnflushedBytes):
+        $env:IntegrationTestsTfm = 'net11.0'          (PowerShell)
+        dotnet test ... -p:IntegrationTestsTfm=net11.0
     -->
-    <TargetFramework>net11.0</TargetFramework>
+    <IntegrationTestsTfm Condition="'$(IntegrationTestsTfm)' == ''">net8.0</IntegrationTestsTfm>
+    <TargetFramework>$(IntegrationTestsTfm)</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
@@ -14,10 +19,10 @@
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.4" />
     <PackageReference Include="FluentAssertions" Version="6.12.2" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="11.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.11" Condition="'$(IntegrationTestsTfm)' == 'net8.0'" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="11.0.0" Condition="'$(IntegrationTestsTfm)' == 'net11.0'" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
-    <PackageReference Include="Testcontainers.MsSql" Version="4.6.0" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
   </ItemGroup>
